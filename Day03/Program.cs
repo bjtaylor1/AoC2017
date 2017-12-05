@@ -18,42 +18,21 @@ namespace Day03
 
         private static long GetResult(string line)
         {
-            long N = long.Parse(line);
-
-            long[] xs = { 1, 0, -1, 0 };
-            long[] ys = { 0, 1, 0, -1 };
-            long dir = 0;
-            long x = 0, y = 0;
-            long step = 1;
-            long n = 1;
-            while (n < N)
+            long n = long.Parse(line);
+            Point currentPoint = new Point(0, 0);
+            Vector currentDir = new Vector(0);
+            var pointNums = new Dictionary<Point, int> { { currentPoint, 1 } };
+            for (int i = 1; i < n; i++)
             {
-                long dx = xs[dir], dy = ys[dir];
-                long length = Math.Min(step / 2, N - n);
-                n += length;
-                x += length * dx;
-                y += length * dy;
-                step++;
-                dir = (dir + 1) % 4;
+                currentPoint = currentPoint + currentDir;
+                var num = pointNums.Where(k => k.Key.IsAdjacent(currentPoint)).Sum(k => k.Value);
+                pointNums.Add(currentPoint, num);
+                if (!pointNums.ContainsKey(currentPoint + currentDir.Left()))
+                {
+                    currentDir = currentDir.Left();
+                }
             }
-            long m = Math.Abs(x) + Math.Abs(y);
-            return m;
-        }
-    }
-
-    public struct Point
-    {
-        public long x;
-        public long y;
-        public override string ToString()
-        {
-            return $"{x},{y}";
-        }
-
-        public bool IsAdjacent(Point rhs)
-        {
-            var isAdjacent = Math.Abs(rhs.x - x) <= 1 && Math.Abs(rhs.y - y) <= 1;
-            return isAdjacent;
+            return pointNums.Last().Value;
         }
     }
 }
