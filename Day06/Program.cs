@@ -15,20 +15,28 @@ namespace Day06
             while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 var configCurrent = new Config(line);
-                var configs = new HashSet<Config>();
-                int cycles = 0;
-                do
-                {
-                    configs.Add(configCurrent);
-                    configCurrent = configCurrent.Redistribute();
-                    cycles++;
-                    if (args.Contains("-v"))
-                    {
-                        Console.WriteLine(configCurrent);
-                    }
-                } while (!configs.Contains(configCurrent));
-                Console.WriteLine(cycles);
+                int repetitions = GetRepetitions(args, ref configCurrent);
+                int loopSize = GetRepetitions(args, ref configCurrent);
+
+                Console.WriteLine(loopSize);
             }
+        }
+
+        private static int GetRepetitions(string[] args, ref Config configCurrent)
+        {
+            var configs = new HashSet<Config>();
+            int cycles = 0;
+            do
+            {
+                configs.Add(configCurrent);
+                configCurrent = configCurrent.Redistribute();
+                cycles++;
+                if (args.Contains("-v"))
+                {
+                    Console.WriteLine(configCurrent);
+                }
+            } while (!configs.Contains(configCurrent));
+            return cycles;
         }
     }
 
