@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Day05
 {
@@ -22,15 +20,23 @@ namespace Day05
             while (currentInstruction >= 0 && currentInstruction < instructionsList.Count)
             {
                 var nextInstruction = instructionsList[currentInstruction];
-                instructionsList[currentInstruction]++;
+                if (instructionsList[currentInstruction] >= 3)
+                {
+                    instructionsList[currentInstruction]--;
+                }
+                else
+                {
+                    instructionsList[currentInstruction]++;
+                }
                 currentInstruction += nextInstruction;
                 steps++;
-                //Console.WriteLine(string.Join(" ", instructionsList.Select((i,n) => n == currentInstruction ? $"({i})" : $" {i} ").ToArray()));
+                if(args.Contains("-v"))
+                {
+                    Console.WriteLine(string.Join(" ", instructionsList.Select((i,n) => n == currentInstruction ? $"({i})" : $" {i} ").ToArray()));
+                }
             }
 
             Console.WriteLine(steps);
         }
-
-        
     }
 }
