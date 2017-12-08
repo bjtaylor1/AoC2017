@@ -25,9 +25,11 @@ namespace Day08
             var dynamicInstructions = string.Join("\r\n", codeLines);
             var csc = new CSharpCodeProvider(new Dictionary<string, string>());
             var parameters = new CompilerParameters(new[] { "mscorlib.dll", "System.Core.dll", Assembly.GetExecutingAssembly().Location }, "day08dynamic.dll", true);
-            var code  = @"using System.Collections.Concurrent;
+            var code  = @"using System;
+                    using System.Collections.Concurrent;
                     public static class Calculator
                     {
+                        public static int MaxEver = int.MinValue;
                         public static ConcurrentDictionary<string,int> ComputeRegisters()
                         {
                             var registers = new ConcurrentDictionary<string,int>();
@@ -42,10 +44,14 @@ namespace Day08
             if(registers == null) throw new InvalidOperationException("It returned null");
             var maxRegisterValue = registers.OrderByDescending(k => k.Value).First();
             Console.WriteLine($"Max: {maxRegisterValue.Key} = {maxRegisterValue.Value}");
+
+            var maxEver = testClass.GetField("MaxEver").GetValue(null);
+            Console.WriteLine($"MaxEver: {maxEver}");
         }
 
         private static readonly Dictionary<string, string> Operators = new Dictionary<string, string> { { "inc", "+=" }, { "dec", "-=" } };
-        static string TranslateCode(string line)
+
+        private static string TranslateCode(string line)
         {
             var match = Regex.Match(line, @"^(\w+) (inc|dec) (-?\d+) if (\w+) (.+)$");
             if (!match.Success) throw new InvalidOperationException("Not matched!");
@@ -56,7 +62,7 @@ namespace Day08
             var condition = match.Groups[5].Value;
             var conditionText = $"registers.GetOrAdd(\"{conditionRegister}\", 0) {condition}";
             var op = Operators[operation];
-            return $"if({conditionText}) {{ registers.GetOrAdd(\"{register}\", 0); registers[\"{register}\"] {op} {amount}; }}";
+            return $"if({conditionText}) {{ registers.GetOrAdd(\"{register}\", 0); registers[\"{register}\"] {op} {amount}; MaxEver = Math.Max(MaxEver, registers[\"{register}\"]); }}";
         }
 
     }
