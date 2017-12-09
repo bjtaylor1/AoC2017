@@ -17,6 +17,7 @@ namespace Day09
                     int totalScore = 0;
                     int charInt;
                     bool inGarbage = false;
+                    int garbageChars = 0;
                     while((charInt = stringReader.Read()) != -1)
                     {
                         char nextChar = (char)charInt;
@@ -25,6 +26,7 @@ namespace Day09
                         else if (inGarbage)
                         {
                             if (nextChar == '>') inGarbage = false;
+                            else garbageChars++;
                         }
                         else if (nextChar == '<') inGarbage = true;
                         else if(nextChar == '{')
@@ -38,7 +40,7 @@ namespace Day09
                             if (--group < 0) throw new InvalidOperationException("Closed more groups than are open!");
                         }
                     }
-                    Console.WriteLine($"Groups: {groups}, score: {totalScore}");
+                    Console.WriteLine($"Groups: {groups}, score: {totalScore}, garbage: {garbageChars}");
                 }
             }
         }
