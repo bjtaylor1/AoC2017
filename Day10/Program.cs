@@ -21,16 +21,14 @@ namespace Day10
                 {
                     foreach (var length in lengths)
                     {
-                        byte[] valuesToReverse = new byte[length];
-                        for (var i = 0; i < length; i++)
+                        byte[] valuesToReverse = Enumerable.Range(0, length)
+                            .Select(i => list[(curPos + i) % list.Length]).Reverse().ToArray();
+                        Array.Copy(valuesToReverse, 0, list, curPos, Math.Min(length, list.Length - curPos));
+                        if(list.Length - curPos < length)
                         {
-                            valuesToReverse[i] = list[(curPos + i) % list.Length];
+                            Array.Copy(valuesToReverse, list.Length - curPos, list, 0, length - (list.Length - curPos));
                         }
-                        for (var i = 0; i < length; i++)
-                        {
-                            list[(curPos + i) % list.Length] = valuesToReverse[length - i - 1];
-                        }
-                        curPos += (length + skipSize++);
+                        curPos = (curPos + (length + skipSize++)) % list.Length ;
                     }
                 }
                 var denseHash = list.Select((b, i) => new { b, i })
