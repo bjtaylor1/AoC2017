@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -7,26 +9,59 @@ namespace Day11
 {
     class Program
     {
+        private static readonly Pos StartPos = new Pos(0, 0, 0);
         static void Main(string[] args)
         {
             string line;
+            //while (!string.IsNullOrEmpty(line = File.ReadAllText(@"..\..\input.txt")))
             while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 var moves = line.Trim().Split(',');
                 var startPos = new Pos(0, 0, 0);
-                var endPos = moves.Aggregate(startPos, (p, m) => p.Move(m));
-                var curPos = new Pos(endPos.X, endPos.Y, 0);
-                var positions = new List<Pos> {curPos};
-                Pos closest;
-                while (!startPos.Equals(closest = positions.OrderBy(p => p.Dist).First()))
+                var allPos = new List<Pos>();
+                var endPos = moves.Aggregate(startPos, (p, m) =>
                 {
-                    var newPositions = Constants.Dirs.Select(p => closest.Move(p))
-                        .Where(np => !positions.Contains(np))
-                        .ToArray();
-                    positions.AddRange(newPositions);
-                }
-                Console.WriteLine(closest.Moved);
+                    var pos = p.Move(m);
+                    if (!allPos.Contains(pos))
+                    {
+                        allPos.Add(pos);
+                    }
+
+                    return pos;
+                });
+                var stepsEndPos = GetSteps(endPos);
+                Console.WriteLine(stepsEndPos);
             }
+        }
+
+        private static readonly ConcurrentDictionary<Pos, int> Steps = new ConcurrentDictionary<Pos, int>();
+
+        private static int GetSteps(Pos endPos)
+        {
+            return GetSteps(endPos, new Stack<Pos>());
+        }
+
+        private static int GetSteps(Pos endPos, Stack<Pos> visited)
+        {
+            visited.Push(endPos);
+            int retVal;
+            var neighbours = Constants.Dirs.Select(endPos.Move).ToArray();
+            var nearerUnvisitedNeighbours = neighbours.Where(n => -Constants.Tolerance < endPos.Dist - n.Dist && !visited.Contains(n)).ToArray();
+            if (endPos.Equals(StartPos))
+                retVal = 0;
+            else
+            {
+                var neighbourDists = nearerUnvisitedNeighbours.Select(n => new {n, steps = GetSteps(n, visited)})
+                    .ToArray();
+                if (neighbourDists.Any())
+                {
+                    var pathNext = neighbourDists.OrderBy(s => s.steps).First();
+                    retVal = pathNext.steps + 1;
+                }
+                else retVal = int.MaxValue;
+            }
+            visited.Pop();
+            return retVal;
         }
     }
 
@@ -66,7 +101,7 @@ namespace Day11
         
         public override string ToString()
         {
-            return $"{X}, {Y}";
+            return $"{X:0.00}, {Y:0.00}";
         }
     }
 
