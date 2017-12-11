@@ -26,7 +26,6 @@ namespace Day11
                     {
                         allPos.Add(pos);
                     }
-
                     return pos;
                 });
                 var stepsEndPos = GetSteps(endPos);
@@ -41,17 +40,22 @@ namespace Day11
             return GetSteps(endPos, new Stack<Pos>());
         }
 
+        private static int GetStepsCached(Pos endPos, Stack<Pos> visited)
+        {
+            return Steps.GetOrAdd(endPos, p => GetSteps(p, visited));
+        }
+
         private static int GetSteps(Pos endPos, Stack<Pos> visited)
         {
             visited.Push(endPos);
             int retVal;
             var neighbours = Constants.Dirs.Select(endPos.Move).ToArray();
-            var nearerUnvisitedNeighbours = neighbours.Where(n => -Constants.Tolerance < endPos.Dist - n.Dist && !visited.Contains(n)).ToArray();
+            var nearerUnvisitedNeighbours = neighbours.Where(n => n.IsNearerThan(endPos) && !visited.Any(v => v.Equals(n) || v.IsNearerThan(n))).ToArray();
             if (endPos.Equals(StartPos))
                 retVal = 0;
             else
             {
-                var neighbourDists = nearerUnvisitedNeighbours.Select(n => new {n, steps = GetSteps(n, visited)})
+                var neighbourDists = nearerUnvisitedNeighbours.Select(n => new {n, steps = GetStepsCached(n, visited)})
                     .ToArray();
                 if (neighbourDists.Any())
                 {
@@ -75,6 +79,12 @@ namespace Day11
             Y = y;
             Moved = moved;
             Dist = X * X + Y * Y;
+        }
+
+        public bool IsNearerThan(Pos other)
+        {
+            return Dist < other.Dist;
+            //return -Constants.Tolerance < other.Dist - Dist;
         }
 
         public override bool Equals(object obj)
