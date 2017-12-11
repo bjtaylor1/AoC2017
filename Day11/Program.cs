@@ -7,26 +7,33 @@ namespace Day11
 {
     class Program
     {
+        private static readonly Pos StartPos = new Pos(0, 0, 0);
         static void Main(string[] args)
         {
             string line;
             while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 var moves = line.Trim().Split(',');
-                var startPos = new Pos(0, 0, 0);
-                var endPos = moves.Aggregate(startPos, (p, m) => p.Move(m));
+                var endPos = moves.Aggregate(StartPos, (p, m) => p.Move(m));
                 var curPos = new Pos(endPos.X, endPos.Y, 0);
-                var positions = new List<Pos> {curPos};
-                Pos closest;
-                while (!startPos.Equals(closest = positions.OrderBy(p => p.Dist).First()))
-                {
-                    var newPositions = Constants.Dirs.Select(p => closest.Move(p))
-                        .Where(np => !positions.Contains(np))
-                        .ToArray();
-                    positions.AddRange(newPositions);
-                }
-                Console.WriteLine(closest.Moved);
+                int closestMoved = GetSteps(curPos);
+                Console.WriteLine(closestMoved);
             }
+        }
+
+        private static int GetSteps(Pos curPos)
+        {
+            var positions = new List<Pos> { curPos };
+            Pos closest;
+            while (!StartPos.Equals(closest = positions.OrderBy(p => p.Dist).First()))
+            {
+                var newPositions = Constants.Dirs.Select(p => closest.Move(p))
+                    .Where(np => !positions.Contains(np))
+                    .ToArray();
+                positions.AddRange(newPositions);
+            }
+            var closestMoved = closest.Moved;
+            return closestMoved;
         }
     }
 
