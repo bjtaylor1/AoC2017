@@ -12,6 +12,8 @@ namespace Day11
         static void Main(string[] args)
         {
             string line;
+            var initialMoves = Constants.Dirs.Select(m => StartPos.Move(m)).ToArray();
+
             //while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             while (!string.IsNullOrEmpty(line = File.ReadAllText(@"..\..\input.txt")))
             {
@@ -25,9 +27,10 @@ namespace Day11
                     return pos;
                 });
                 var curPos = new Pos(endPos.X, endPos.Y, 0);
-                //check: 
-                //everything in 'initial moves' has Dist = 1;
-                //everything in allPos is OnLattice or OnMeridian
+
+                var notOnLattice = allPos.Where(p => !Pos.IsOnLattice(p.X, p.Y)).ToArray();
+                var check = Pos.IsOnLattice(notOnLattice[12].X, notOnLattice[12].Y);
+
                 int closestMoved = GetSteps(curPos);
                 int furthestEver = 0;
                 for (var index = 0; index < allPos.Count; index++)
@@ -66,7 +69,7 @@ namespace Day11
             X = x;
             Y = y;
             Moved = moved;
-            Dist = Math.Sqrt(X * X + Y * Y);
+            Dist = GetDist(x, y);
         }
 
         public override bool Equals(object obj)
@@ -96,20 +99,21 @@ namespace Day11
             return $"{X}, {Y}";
         }
 
-        private static bool IsOnLattice(double x, double y)
+        public static bool IsOnLattice(double x, double y)
         {
-            var isOnLattice = IsOnMeridian(x, y) || IsOnMeridian(x, y + x / 2) || IsOnMeridian(x, y - x / 2);
+            double n = y - x * Math.Tan(Math.PI / 6);
+            bool isOnLattice = IsInt(n) && IsInt(GetDist(x, y - n));
             return isOnLattice;
         }
 
-        private static bool IsOnMeridian(double x, double y)
+        private static double GetDist(double x, double y)
         {
-            return Math.Abs(x - 2 * y) < Constants.Tolerance && IsInt(Math.Sqrt(x * x + y * y));
+            return Math.Sqrt(x * x + y * y);
         }
 
-        private static bool IsInt(double x)
+        public static bool IsInt(double x)
         {
-            return Math.Abs(x - (int) x) < Constants.Tolerance;
+            return Math.Abs(x - Math.Round(x)) < Constants.Tolerance;
         }
     }
 
@@ -127,12 +131,12 @@ namespace Day11
         };
         public static readonly Dictionary<string, double> Yd = new Dictionary<string, double>
         {
-            {"ne", Math.Sin(Math.PI/3) },
+            {"ne", Math.Sin(Math.PI/6) },
             {"n", 1 },
-            {"nw", Math.Sin(Math.PI/3) },
-            {"sw",  -Math.Sin(Math.PI/3)},
+            {"nw", Math.Sin(Math.PI/6) },
+            {"sw",  -Math.Sin(Math.PI/6)},
             {"s", -1 },
-            {"se", -Math.Sin(Math.PI/3) }
+            {"se", -Math.Sin(Math.PI/6) }
         };
 
         public const double Tolerance = 1e-6;
