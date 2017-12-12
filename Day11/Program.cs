@@ -12,7 +12,6 @@ namespace Day11
         static void Main(string[] args)
         {
             string line;
-            var initialMoves = Constants.Dirs.Select(m => StartPos.Move(m)).ToArray();
 
             //while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             while (!string.IsNullOrEmpty(line = File.ReadAllText(@"..\..\input.txt")))
@@ -28,20 +27,24 @@ namespace Day11
                 });
                 var curPos = new Pos(endPos.X, endPos.Y, 0);
 
-                var notOnLattice = allPos.Where(p => !Pos.IsOnLattice(p.X, p.Y)).ToArray();
-                var check = Pos.IsOnLattice(notOnLattice[12].X, notOnLattice[12].Y);
-
-                int closestMoved = GetSteps(curPos);
-                int furthestEver = 0;
-                for (var index = 0; index < allPos.Count; index++)
-                {
-                    if(index % 10 == 0) Console.WriteLine($"\r{(double)index / allPos.Count:P}");
-                    var pos = allPos[index];
-                    var steps = GetSteps(pos);
-                    if (steps > furthestEver) furthestEver = steps;
-                }
-                Console.WriteLine(furthestEver);
+                int closestMoved = GetStepsF(curPos);
+                //int furthestEver = 0;
+                //for (var index = 0; index < allPos.Count; index++)
+                //{
+                //    if(index % 10 == 0) Console.WriteLine($"\r{(double)index / allPos.Count:P}");
+                //    var pos = allPos[index];
+                //    var steps = GetSteps(pos);
+                //    if (steps > furthestEver) furthestEver = steps;
+                //}
+                Console.WriteLine(closestMoved);
             }
+        }
+
+        private static int GetStepsF(Pos curPos)
+        {
+            curPos.GetHighestFactor(out Pos factor, out int f);
+            int stepsf = f * GetSteps(factor);
+            return stepsf;
         }
 
         private static int GetSteps(Pos curPos)
@@ -72,6 +75,21 @@ namespace Day11
             Dist = GetDist(x, y);
         }
 
+        public void GetHighestFactor(out Pos factor, out int f)
+        {
+            factor = this;
+            f = 1;
+            for (int n = 1; n <= Dist; n++)
+            {
+                double xd = X / n, yd = Y / n;
+                if (IsOnLattice(xd, yd))
+                {
+                    factor = new Pos(xd, yd, 0);
+                    f = n;
+                }
+            }
+        }
+        
         public override bool Equals(object obj)
         {
             return obj is Pos pos &&
