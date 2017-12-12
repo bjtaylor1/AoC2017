@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace Day11
 {
@@ -13,8 +11,7 @@ namespace Day11
         {
             string line;
 
-            //while (!string.IsNullOrEmpty(line = Console.ReadLine()))
-            while (!string.IsNullOrEmpty(line = File.ReadAllText(@"..\..\input.txt")))
+            while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 var moves = line.Trim().Split(',');
                 var allPos = new List<Pos>();
@@ -25,18 +22,20 @@ namespace Day11
                     if (!allPos.Contains(absPos)) allPos.Add(absPos);
                     return pos;
                 });
-                var curPos = new Pos(endPos.X, endPos.Y, 0);
 
-                int closestMoved = GetStepsF(curPos);
-                //int furthestEver = 0;
-                //for (var index = 0; index < allPos.Count; index++)
-                //{
-                //    if(index % 10 == 0) Console.WriteLine($"\r{(double)index / allPos.Count:P}");
-                //    var pos = allPos[index];
-                //    var steps = GetSteps(pos);
-                //    if (steps > furthestEver) furthestEver = steps;
-                //}
-                Console.WriteLine(closestMoved);
+                var minDistPerStep = StartPos.Move("ne").Move("se").Dist / 2;
+                var maxDistSteps = GetStepsF(allPos.OrderByDescending(p => p.Dist).First());
+
+                var furthestEverCandidates = allPos.Where(p => p.Dist >= maxDistSteps * minDistPerStep).ToArray();
+                int furthestEver = 0;
+                for (var index = 0; index < furthestEverCandidates.Length; index++)
+                {
+                    Console.Write($"{(double)index / furthestEverCandidates.Length:P}   \r");
+                    var pos = furthestEverCandidates[index];
+                    var steps = GetStepsF(pos);
+                    if (steps > furthestEver) furthestEver = steps;
+                }
+                Console.WriteLine(furthestEver);
             }
         }
 
