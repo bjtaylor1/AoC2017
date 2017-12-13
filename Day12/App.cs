@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using QuickGraph;
 
 namespace Day12
 {
@@ -28,9 +23,19 @@ namespace Day12
                     connections.Add(new Connection(to, from));
                 }
             }
-            HashSet<int> connectedToZero = new HashSet<int>();
-            Count(connections, connectedToZero, 0);
-            Console.WriteLine(connectedToZero.Count);
+            int groups = 0;
+            for (int? groupTag = connections.FirstOrDefault()?.From;
+                groupTag != null;
+                groupTag = connections.FirstOrDefault()?.From)
+            {
+                groups++;
+                HashSet<int> connectedToGroupTag = new HashSet<int>();
+                Count(connections, connectedToGroupTag, groupTag.Value);
+                connections.RemoveWhere(c =>
+                    connectedToGroupTag.Contains(c.From) || connectedToGroupTag.Contains(c.To));
+            }
+            
+            Console.WriteLine(groups);
         }
 
         static void Count(HashSet<Connection> allConnections, HashSet<int> connectedTo, int n)
