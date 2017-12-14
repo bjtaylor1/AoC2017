@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Day13
@@ -10,16 +11,26 @@ namespace Day13
         {
             string line;
             var poses = new List<Pos>();
-            while(!string.IsNullOrEmpty(line = Console.ReadLine()))
+            var sw = Stopwatch.StartNew();
+            while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
-                var parts = line.Split(new[] { ": " }, StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray() ;
+                var parts = line.Split(new[] { ": " }, StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
                 var pos = new Pos(parts[0], parts[1]);
                 poses.Add(pos);
             }
-            var whereCaught = poses.Where(p => p.Amplitude - Math.Abs((p.Depth % (2*p.Amplitude)) - p.Amplitude) == 0).ToArray();
-            var severity = whereCaught.Sum(p => p.Range * p.Depth);
-            
-            Console.Out.WriteLine(severity);
+            bool found = false;
+            for (int delay = 0; !found ; delay++)
+            {
+                var spos = poses.Select(p => p.Amplitude - Math.Abs(((p.Depth + delay) % (2 * p.Amplitude)) - p.Amplitude) == 0).ToArray();
+                var whereCaught = poses.Where(p => p.Amplitude - Math.Abs(((p.Depth + delay) % (2 * p.Amplitude)) - p.Amplitude) == 0).ToArray();
+                if(!whereCaught.Any())
+                {
+                    sw.Stop();
+                    Console.Out.WriteLine(delay);
+                    Console.Out.WriteLine(sw.Elapsed);
+                    found = true;
+                }
+            }
         }
     }
 
@@ -40,5 +51,5 @@ namespace Day13
             return $"{Depth}: {Range}";
         }
     }
-    
+
 }
