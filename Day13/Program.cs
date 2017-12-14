@@ -21,9 +21,7 @@ namespace Day13
             bool found = false;
             for (int delay = 0; !found ; delay++)
             {
-                var spos = poses.Select(p => p.Amplitude - Math.Abs(((p.Depth + delay) % (2 * p.Amplitude)) - p.Amplitude) == 0).ToArray();
-                var whereCaught = poses.Where(p => p.Amplitude - Math.Abs(((p.Depth + delay) % (2 * p.Amplitude)) - p.Amplitude) == 0).ToArray();
-                if(!whereCaught.Any())
+                if(poses.All(p => p.Amplitude - Math.Abs((p.Depth + delay) % (2 * p.Amplitude) - p.Amplitude) != 0))
                 {
                     sw.Stop();
                     Console.Out.WriteLine(delay);
