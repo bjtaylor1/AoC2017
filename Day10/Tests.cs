@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace Helpers.Tests
+namespace Day10
 {
     [TestFixture]
     public class HelperTests
@@ -11,7 +11,7 @@ namespace Helpers.Tests
         [TestCase("1,2,4", "63960835bcdc130f0b66d7ff4f6a5a8e")]
         public void KnotHashTests(string input, string expectedKnotHash)
         {
-            Assert.AreEqual(expectedKnotHash, Helper.GetKnotHash(input));
+            Assert.AreEqual(expectedKnotHash, Program.GetKnotHash(input));
         }
     }
 }
