@@ -8,6 +8,13 @@ namespace Helpers
     {
         public static string GetKnotHash(string input)
         {
+            byte[] knotHashBytes = GetKnotHashBytes(input);
+            var knotHash = knotHashBytes.Aggregate(new StringBuilder(), (sb, b) => sb.Append($"{b:x}".PadLeft(2, '0'))).ToString();
+            return knotHash;
+        }
+
+        public static byte[] GetKnotHashBytes(string input)
+        {
             const int count = 256;
             byte[] list = Enumerable.Range(0, count).Select(i => (byte)i).ToArray();
             int curPos = 0;
@@ -24,15 +31,13 @@ namespace Helpers
                     {
                         Array.Copy(valuesToReverse, list.Length - curPos, list, 0, length - (list.Length - curPos));
                     }
-                    curPos = (curPos + (length + skipSize++)) % list.Length;
+                    curPos = (curPos + length + skipSize++) % list.Length;
                 }
             }
             var denseHash = list.Select((b, i) => new { b, i })
                 .GroupBy(a => a.i / 16)
                 .Select(g => g.Select(a => a.b).Aggregate((b1, b2) => (byte)(b1 ^ b2))).ToArray();
-
-            var knotHash = denseHash.Aggregate(new StringBuilder(), (sb, b) => sb.Append($"{b:x}".PadLeft(2, '0'))).ToString();
-            return knotHash;
+            return denseHash;
         }
     }
 }
