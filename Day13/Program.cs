@@ -16,10 +16,10 @@ namespace Day13
                 var pos = new Pos(parts[0], parts[1]);
                 poses.Add(pos);
             }
-            var sPos = poses.Select(p => p.Range - Math.Abs((p.Depth % (2*p.Range)) - p.Amplitude)).ToArray();
-
-            //var severity = whereCaught.Sum(p => p.Range * p.Depth);
-            Console.Out.WriteLine();
+            var whereCaught = poses.Where(p => p.Amplitude - Math.Abs((p.Depth % (2*p.Amplitude)) - p.Amplitude) == 0).ToArray();
+            var severity = whereCaught.Sum(p => p.Range * p.Depth);
+            
+            Console.Out.WriteLine(severity);
         }
     }
 
@@ -33,7 +33,7 @@ namespace Day13
 
         public int Depth { get; }
         public int Range { get; }
-        public int Amplitude => Range + 1;
+        public int Amplitude => Range - 1;
 
         public override string ToString()
         {
