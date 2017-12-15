@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Day15
@@ -13,13 +14,20 @@ namespace Day15
                 long[] parts = line.Split(',').Select(long.Parse).ToArray();
                 long a = parts[0], b = parts[1];
                 long matches = 0;
-                for (long i = 0; i < 40e6; i++)
+                Queue<long> aVals = new Queue<long>(), bVals = new Queue<long>();
+                int valuesChecked = 0;
+                while(valuesChecked < 5e6)
                 {
                     a = (a * 16807) % 2147483647;
                     b = (b * 48271) % 2147483647;
-                    if (a%4 == 0 /*&& b%8 == 0*/)
+                    if (a % 4 == 0) aVals.Enqueue(a);
+                    if (b % 8 == 0) bVals.Enqueue(b);
+                    while (aVals.Any() && bVals.Any())
                     {
-                        if ((a & 0xffff) == (b & 0xffff))
+                        valuesChecked++;
+                        var nextA = aVals.Dequeue();
+                        var nextB = bVals.Dequeue();
+                        if ((nextA & 0xffff) == (nextB & 0xffff))
                         {
                             matches++;
                         }
