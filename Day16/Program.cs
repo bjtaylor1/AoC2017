@@ -6,31 +6,42 @@ namespace Day16
 {
     class Program
     {
+        private const string startPos = "abcdefghijklmnop";
+
         static void Main(string[] args)
         {
             string line;
             while(!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 string[] moves = line.Split(',');
-                var programs = "abcdefghijklmnop".ToArray();
-                foreach (var m in moves)
+                var programs = startPos.ToArray();
+                const int N = (int)1e9;
+                for (int n = 0; n < N; )
                 {
-                    void DoExchange(int a, int b) { var mem = programs[a]; programs[a] = programs[b]; programs[b] = mem; }
-                    if (IsSpin(m, out int x))
+                    foreach (var m in moves)
                     {
-                        programs = Enumerable.Range(0, programs.Length).Select(i => programs[(i - x + programs.Length) % programs.Length]).ToArray();
+                        void DoExchange(int a, int b) { var mem = programs[a]; programs[a] = programs[b]; programs[b] = mem; }
+                        if (IsSpin(m, out int x))
+                        {
+                            programs = Enumerable.Range(0, programs.Length).Select(i => programs[(i - x + programs.Length) % programs.Length]).ToArray();
+                        }
+                        else if (IsExchange(m, out int a, out int b))
+                        {
+                            DoExchange(a, b);
+                        }
+                        else if (IsPartner(m, out char _a, out char _b))
+                        {
+                            DoExchange(Array.IndexOf(programs, _a), Array.IndexOf(programs, _b));
+                        }
+                        else throw new InvalidOperationException($"Invalid move {m}");
                     }
-                    else if (IsExchange(m, out int a, out int b))
+                    n++;
+                    if (new string(programs) == startPos)
                     {
-                        DoExchange(a, b);
+                        n *= (N / n);
                     }
-                    else if (IsPartner(m, out char _a, out char _b))
-                    {
-                        DoExchange(Array.IndexOf(programs, _a), Array.IndexOf(programs, _b));
-                    }
-                    else throw new InvalidOperationException($"Invalid move {m}"); 
                 }
-                Console.WriteLine(new string(programs));
+                Console.WriteLine($"\n{new string(programs)}");
             }
         }
 
