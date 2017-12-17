@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Day17
 {
@@ -15,16 +10,15 @@ namespace Day17
             while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 int N = int.Parse(line);
-                var buffer = new List<int>() { 0 };
-                int curPos = 0;
-                int indexOfTarget;
-                for(int i = 1; -1 == (indexOfTarget = buffer.IndexOf(2017)); i++)
+                long pnprev = 0;
+                long? valueAfter0 = null;
+                for (int n = 1; n <= 50e6; n++)
                 {
-                    curPos = (curPos + N) % buffer.Count;
-                    buffer.Insert(++curPos, i);
-                    Debug.WriteLine(string.Join(" ", buffer.Select((b, j) => j == curPos ? $"({b})" : $" {b} ")));
+                    long pn = ((pnprev + N) % n) + 1;
+                    if (pn == 1) valueAfter0 = n;
+                    pnprev = pn;
                 }
-                Console.Out.WriteLine(buffer[(indexOfTarget + 1) % buffer.Count]);
+                Console.WriteLine(valueAfter0);
             }
         }
     }
