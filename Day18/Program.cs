@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Day18
@@ -18,7 +19,7 @@ namespace Day18
             var registers = new ConcurrentDictionary<string, long>();
 
             long? lastSound = null;
-
+            
             long ParamVal(string p) => long.TryParse(p, out var intVal) ? intVal : registers.GetOrAdd(p, 0);
             long i = 0;
             var commands = new Dictionary<string, Action<string, string>>
@@ -28,18 +29,8 @@ namespace Day18
                 {"add", (p1, p2) => registers[p1] = ParamVal(p1) + ParamVal(p2)},
                 {"mul", (p1, p2) => registers[p1] = ParamVal(p1) * ParamVal(p2)},
                 {"mod", (p1, p2) => registers[p1] = ParamVal(p1) % ParamVal(p2)},
-                {
-                    "rcv", (p1, p2) =>
-                    {
-                        if (ParamVal(p1) != 0) throw new FinishedException();
-                    }
-                },
-                {
-                    "jgz", (p1, p2) =>
-                    {
-                        if (ParamVal(p1) > 0) i += ParamVal(p2) - 1;
-                    }
-                }
+                {"rcv", (p1, p2) => { if (ParamVal(p1) != 0) throw new FinishedException(); } },
+                { "jgz", (p1, p2) => { if (ParamVal(p1) > 0) i += ParamVal(p2) - 1; } }
             };
             try
             {
@@ -47,10 +38,9 @@ namespace Day18
                 {
                     var parts = lines[(int)i].Split(' ');
                     Array.Resize(ref parts, 3);
-                    if(!commands.TryGetValue(parts[0], out var cmd))
-                        throw new InvalidOperationException($"Invalid command '{parts[0]}' on line {i+1}");
+                    var cmd = commands[parts[0]];
 
-                    Console.Out.WriteLine($"{i+1}: {lines[(int)i]}  = {parts[0]} {string.Join(" " , parts.Skip(1).Where(s => s != null).Select(ParamVal))}");
+                    Debug.WriteLine($"{i+1}: {lines[(int)i]}  = {parts[0]} {string.Join(" " , parts.Skip(1).Where(s => s != null).Select(ParamVal))}");
                     cmd(parts[1], parts[2]);
                 }
                 throw new InvalidOperationException("Reached end!");
