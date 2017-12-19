@@ -11,8 +11,10 @@ namespace Day18
 {
     class Program
     {
+
         static void Main(string[] args)
         {
+
             string line;
             var lines = new List<string>();
             //lines = File.ReadAllLines(@"..\..\testinput.txt").ToList();
@@ -21,9 +23,9 @@ namespace Day18
                 lines.Add(line);
             }
 
-            var queues = Enumerable.Range(0,2).Select(n => new BlockingCollection<long>()).ToArray();
+            var queues = Enumerable.Range(0,2).Select(n => new BlockingCollection<long?>()).ToArray();
             var deadlockCheck = new object();
-            
+
             long ParamVal(ConcurrentDictionary<string,long> registers, string p) => long.TryParse(p, out var intVal) ? intVal : registers.GetOrAdd(p, 0);
             long timesP1SentValue = 0;
             ManualResetEvent stop = new ManualResetEvent(false);
@@ -42,26 +44,36 @@ namespace Day18
                     {
                         "rcv", p =>
                         {
-                            if (p.QIn.Count == 0)
+                            void DoReceive()
                             {
-                                lock (p.QIn)
+                                long? nextVal = p.QIn.Take();
+                                if (nextVal != null)
                                 {
-                                    if (p.QIn.Count == 0)
-                                    {
-                                        try
-                                        {
-                                            if (!Monitor.TryEnter(deadlockCheck)) throw new DeadlockException();
-                                            p.Registers[p.P1] = p.QIn.Take();
-                                            Console.WriteLine($"{p.ProgNum} rcv {p.Registers[p.P1]}");
-
-                                        }
-                                        finally
-                                        {
-                                            Monitor.Exit(deadlockCheck);
-                                        }
-                                    }
+                                    p.Registers[p.P1] = nextVal.Value;
+                                    Console.WriteLine($"{p.ProgNum} rcv {p.Registers[p.P1]}");
                                 }
                             }
+                            bool doneReceive = false;
+                            if (p.QIn.Count == 0) lock (p.QIn) if (p.QIn.Count == 0)
+                            {
+                                bool monitorEntered = false;
+                                try
+                                {
+                                    // waiting, so we need to check the other  isn't waiting as well.
+                                    if (!(monitorEntered = Monitor.TryEnter(deadlockCheck)))
+                                    {
+                                        p.QOut.Add(null); //give the other one a value which it will be waiting for.
+                                        throw new DeadlockException();
+                                    }
+                                    DoReceive();
+                                    doneReceive = true;
+                                }
+                                finally
+                                {
+                                    if(monitorEntered) Monitor.Exit(deadlockCheck);
+                                }
+                            }
+                            if (!doneReceive) DoReceive(); //not waiting, so don't need a lock.
                         }
                     },
                     {
@@ -76,7 +88,11 @@ namespace Day18
                 try
                 {
                     var registers = new ConcurrentDictionary<string, long> {["p"] = n};
-                    if (stop.WaitOne(0)) return;
+                    if (stop.WaitOne(0))
+                    {
+                        Console.Out.WriteLine($"{n} asked to stop");
+                        return;
+                    };
                     var qout = queues[n];
                     var qin = queues[1 - n];
                     for (long i = 0; i < lines.Count; i++)
@@ -89,15 +105,16 @@ namespace Day18
                         i += cmdParams.Jump;
                         Console.WriteLine();
                     }
-                    throw new InvalidOperationException("Reached end!");
                 }
-                catch (FinishedException)
+                catch (FinishedException e)
                 {
-                    Console.WriteLine(timesP1SentValue);
+                    Console.WriteLine($"{n} threw {e.GetType().Name}");
                     stop.Set();
                 }
             })).ToArray();
+            Console.WriteLine("Created all tasks");
             Task.WaitAll(tasks);
+            Console.WriteLine("Finished all tasks");
             Console.WriteLine(timesP1SentValue);
         }
 
@@ -118,12 +135,12 @@ jgz X Y jumps with an offset of the value of Y, but only if the value of X is gr
         public string Instruction { get;  }
         public string P1 { get; }
         public string P2 { get; }
-        public BlockingCollection<long> QIn { get; }
-        public BlockingCollection<long> QOut { get; }
+        public BlockingCollection<long?> QIn { get; }
+        public BlockingCollection<long?> QOut { get; }
         public ConcurrentDictionary<string, long> Registers { get; set; }
         public long Jump { get; set; }
 
-        public CommandParameters(int progNum, string instruction, string p1, string p2, BlockingCollection<long> qIn, BlockingCollection<long> qOut, ConcurrentDictionary<string, long> registers)
+        public CommandParameters(int progNum, string instruction, string p1, string p2, BlockingCollection<long?> qIn, BlockingCollection<long?> qOut, ConcurrentDictionary<string, long> registers)
         {
             ProgNum = progNum;
             Instruction = instruction;
