@@ -17,7 +17,7 @@ namespace Day18
 
             string line;
             var lines = new List<string>();
-            //lines = File.ReadAllLines(@"..\..\testinput.txt").ToList();
+            //lines = File.ReadAllLines(@"..\..\input.txt").ToList();
             while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 lines.Add(line);
@@ -46,15 +46,14 @@ namespace Day18
                         {
                             void DoReceive()
                             {
-                                long? nextVal = p.QIn.Take();
-                                if (nextVal != null)
-                                {
-                                    p.Registers[p.P1] = nextVal.Value;
-                                    Console.WriteLine($"{p.ProgNum} rcv {p.Registers[p.P1]}");
-                                }
+                                var nextVal = p.QIn.Take();
+                                Console.Out.WriteLine($"{p.ProgNum} received {nextVal}");
+                                if(nextVal == null) throw new FinishedException(); //the other thread has detected deadlock, so we should also terminate.
+                                p.Registers[p.P1] = nextVal.Value;
+                                
                             }
                             bool doneReceive = false;
-                            if (p.QIn.Count == 0) lock (p.QIn) if (p.QIn.Count == 0)
+                            if (p.QIn.Count == 0) lock (p.QIn) if (p.QIn.Count == 0) //are we going to have to wait?
                             {
                                 bool monitorEntered = false;
                                 try
@@ -63,6 +62,7 @@ namespace Day18
                                     if (!(monitorEntered = Monitor.TryEnter(deadlockCheck)))
                                     {
                                         p.QOut.Add(null); //give the other one a value which it will be waiting for.
+                                        p.QOut.CompleteAdding();
                                         throw new DeadlockException();
                                     }
                                     DoReceive();
@@ -88,22 +88,21 @@ namespace Day18
                 try
                 {
                     var registers = new ConcurrentDictionary<string, long> {["p"] = n};
-                    if (stop.WaitOne(0))
-                    {
-                        Console.Out.WriteLine($"{n} asked to stop");
-                        return;
-                    };
                     var qout = queues[n];
                     var qin = queues[1 - n];
                     for (long i = 0; i < lines.Count; i++)
                     {
+                        if (stop.WaitOne(0))
+                        {
+                            Console.Out.WriteLine($"{n} asked to stop");
+                            return;
+                        }
                         var parts = lines[(int) i].Split(' ');
                         Array.Resize(ref parts, 3);
                         var cmd = commands[parts[0]];
                         var cmdParams = new CommandParameters(n, parts[0], parts[1], parts[2], qin, qout, registers);
                         cmd(cmdParams);
                         i += cmdParams.Jump;
-                        Console.WriteLine();
                     }
                 }
                 catch (FinishedException e)
@@ -112,9 +111,7 @@ namespace Day18
                     stop.Set();
                 }
             })).ToArray();
-            Console.WriteLine("Created all tasks");
             Task.WaitAll(tasks);
-            Console.WriteLine("Finished all tasks");
             Console.WriteLine(timesP1SentValue);
         }
 
