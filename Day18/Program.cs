@@ -25,15 +25,19 @@ namespace Day18
 
             var queues = Enumerable.Range(0,2).Select(n => new BlockingCollection<long?>()).ToArray();
             var deadlockCheck = new object();
-
+            int step = 0;
             long ParamVal(ConcurrentDictionary<string,long> registers, string p) => long.TryParse(p, out var intVal) ? intVal : registers.GetOrAdd(p, 0);
             long timesP1SentValue = 0;
             ManualResetEvent stop = new ManualResetEvent(false);
+            var sentRecord = new[] {new List<string>(), new List<string>()};
+            var receivedRecord = new[] {new List<string>(), new List<string>()};
             var commands = new Dictionary<string, Action<CommandParameters>>
                 {
                     {"snd", p =>
                         {
-                            p.QOut.Add(ParamVal(p.Registers, p.P1));
+                            var paramVal = ParamVal(p.Registers, p.P1);
+                            p.QOut.Add(paramVal);
+                            sentRecord[p.ProgNum].Add($"{Interlocked.Increment(ref step)}:{paramVal.ToString()}");
                             if (p.ProgNum == 1) timesP1SentValue++;
                         }
                     },
@@ -47,10 +51,10 @@ namespace Day18
                             void DoReceive()
                             {
                                 var nextVal = p.QIn.Take();
-                                Console.Out.WriteLine($"{p.ProgNum} received {nextVal}");
+                                receivedRecord[p.ProgNum].Add($"{Interlocked.Increment(ref step)}:{nextVal?.ToString() ?? "null"}");
                                 if(nextVal == null) throw new FinishedException(); //the other thread has detected deadlock, so we should also terminate.
                                 p.Registers[p.P1] = nextVal.Value;
-                                
+
                             }
                             bool doneReceive = false;
                             if (p.QIn.Count == 0) lock (p.QIn) if (p.QIn.Count == 0) //are we going to have to wait?
@@ -92,11 +96,11 @@ namespace Day18
                     var qin = queues[1 - n];
                     for (long i = 0; i < lines.Count; i++)
                     {
-                        if (stop.WaitOne(0))
-                        {
-                            Console.Out.WriteLine($"{n} asked to stop");
-                            return;
-                        }
+                        //if (stop.WaitOne(0))
+                        //{
+                        //    Console.Out.WriteLine($"{n} asked to stop");
+                        //    return;
+                        //}
                         var parts = lines[(int) i].Split(' ');
                         Array.Resize(ref parts, 3);
                         var cmd = commands[parts[0]];
@@ -108,10 +112,16 @@ namespace Day18
                 catch (FinishedException e)
                 {
                     Console.WriteLine($"{n} threw {e.GetType().Name}");
+                    File.AppendAllLines($"{n}sent.txt", new[] {e.GetType().Name});
+                    File.AppendAllLines($"{n}received.txt", new[] {e.GetType().Name});
                     stop.Set();
                 }
             })).ToArray();
             Task.WaitAll(tasks);
+            File.WriteAllLines("0sent.txt", sentRecord[0]);
+            File.WriteAllLines("1sent.txt", sentRecord[1]);
+            File.WriteAllLines("0received.txt", receivedRecord[0]);
+            File.WriteAllLines("1received.txt", receivedRecord[1]);
             Console.WriteLine(timesP1SentValue);
         }
 
