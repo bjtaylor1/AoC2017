@@ -26,7 +26,7 @@ namespace Day19
             Vector TurnLeft (Vector v) => new Vector(v.Y, v.X);
             Vector TurnRight (Vector v) => new Vector(-v.Y, -v.X);
             bool ContainsValidChar(Vector v) => !IsOutOfBounds(v) && CharAt(v) != ' ';
-
+            int steps = 1;
             var msg = new StringBuilder();
             do
             {
@@ -36,6 +36,7 @@ namespace Day19
                 {
                     msg.Append(currentChar.Value);
                 }
+                steps++;
                 if (!ContainsValidChar(currentPos + currentDir))
                 {
                     var turns = new[] {TurnLeft(currentDir), TurnRight(currentDir)};
@@ -44,6 +45,7 @@ namespace Day19
             } while (currentDir != null);
 
             Console.WriteLine(msg.ToString());
+            Console.WriteLine(steps);
         }
 
         public class Vector
