@@ -22,12 +22,13 @@ namespace Day20
             }
 #endif
             var minAccel = particles.Min(p => p.Acceleration.Magnitude);
-            particles.RemoveAll(p => p.Acceleration.Magnitude != minAccel);
+            //particles.RemoveAll(p => p.Acceleration.Magnitude != minAccel);
             long answer = -1;
             bool achievedQuiscence = false;
             bool reportedQuiescence = false;
             while (answer == -1)
             {
+                
                 if (achievedQuiscence || (achievedQuiscence = particles.All(p => p.IsQuiescent)))
                 {
                     if (!reportedQuiescence)
@@ -41,9 +42,13 @@ namespace Day20
                     if(nearest.Id == lowestVelocity.Id) answer = nearest.Id;
                 }
                 particles.ForEach(p => p.Move());
+                var collisions = particles.GroupBy(p => p.Position).Where(g => g.Count() > 1);
+                var colliderIds = collisions.SelectMany(c => c.Select(p => p.Id)).ToArray();
+                int removed = particles.RemoveAll(p => colliderIds.Contains(p.Id));
+                if(removed > 0) Console.WriteLine($"Removed {removed}");
 
             }
-            Console.WriteLine(answer);
+            Console.WriteLine(particles.Count);
         }
     }
 

@@ -4,22 +4,21 @@ namespace Day17
 {
     class Program
     {
-        static void Main(string[] args)
+        static int N = 370; //(my puzzle input)
+
+        static int F(int n)
         {
-            string line;
-            while (!string.IsNullOrEmpty(line = Console.ReadLine()))
-            {
-                int N = int.Parse(line);
-                long pnprev = 0;
-                long? valueAfter0 = null;
-                for (int n = 1; n <= 50e6; n++)
-                {
-                    long pn = ((pnprev + N) % n) + 1;
-                    if (pn == 1) valueAfter0 = n;
-                    pnprev = pn;
-                }
-                Console.WriteLine(valueAfter0);
-            }
+            if (n == 0) return 0;
+            return ((G(n - 1, F(n-2)) + N) % n) + 1;
+        }
+        static int G(int n, int prevn)
+        {
+            if (n == 0) return 0;
+            return ((F(n - 1) + N) % n) + 1;
+        }
+        static void Main()
+        {
+            Console.WriteLine(F(50000000));
         }
     }
 }
