@@ -15,30 +15,33 @@ namespace Day18
         static void Main(string[] args)
         {
 
+            List<string> lines;
+#if  DEBUG
+            lines = File.ReadAllLines(@"..\..\testinput2.txt").ToList();
+#else
             string line;
-            var lines = new List<string>();
-            //lines = File.ReadAllLines(@"..\..\input.txt").ToList();
+            lines = new List<string>();
             while (!string.IsNullOrEmpty(line = Console.ReadLine()))
             {
                 lines.Add(line);
             }
+#endif
 
-            var queues = Enumerable.Range(0,2).Select(n => new BlockingCollection<long?>()).ToArray();
+            var queues = Enumerable.Range(0, 2).Select(n => new ConcurrentQueue<long?>()).ToArray();
             var deadlockCheck = new object();
             int step = 0;
-            long ParamVal(ConcurrentDictionary<string,long> registers, string p) => long.TryParse(p, out var intVal) ? intVal : registers.GetOrAdd(p, 0);
+            long ParamVal(ConcurrentDictionary<string, long> registers, string p) => long.TryParse(p, out var intVal) ? intVal : registers.GetOrAdd(p, 0);
             long timesP1SentValue = 0;
             ManualResetEvent stop = new ManualResetEvent(false);
-            var sentRecord = new[] {new List<string>(), new List<string>()};
-            var receivedRecord = new[] {new List<string>(), new List<string>()};
+            var tick = new[]{new Semaphore(0, int.MaxValue), new Semaphore(0, int.MaxValue)};
             var commands = new Dictionary<string, Action<CommandParameters>>
                 {
                     {"snd", p =>
                         {
                             var paramVal = ParamVal(p.Registers, p.P1);
-                            p.QOut.Add(paramVal);
-                            sentRecord[p.ProgNum].Add($"{Interlocked.Increment(ref step)}:{paramVal.ToString()}");
+                            p.QOut.Enqueue(paramVal);
                             if (p.ProgNum == 1) timesP1SentValue++;
+                            tick[1 - p.ProgNum].Release();
                         }
                     },
                     {"set", p => p.Registers[p.P1] = ParamVal(p.Registers, p.P2)},
@@ -48,36 +51,27 @@ namespace Day18
                     {
                         "rcv", p =>
                         {
-                            void DoReceive()
-                            {
-                                var nextVal = p.QIn.Take();
-                                receivedRecord[p.ProgNum].Add($"{Interlocked.Increment(ref step)}:{nextVal?.ToString() ?? "null"}");
-                                if(nextVal == null) throw new FinishedException(); //the other thread has detected deadlock, so we should also terminate.
-                                p.Registers[p.P1] = nextVal.Value;
-
-                            }
-                            bool doneReceive = false;
-                            if (p.QIn.Count == 0) lock (p.QIn) if (p.QIn.Count == 0) //are we going to have to wait?
+                            long? valReceived;
+                            while (!p.QIn.TryDequeue(out valReceived))
                             {
                                 bool monitorEntered = false;
                                 try
                                 {
-                                    // waiting, so we need to check the other  isn't waiting as well.
                                     if (!(monitorEntered = Monitor.TryEnter(deadlockCheck)))
                                     {
-                                        p.QOut.Add(null); //give the other one a value which it will be waiting for.
-                                        p.QOut.CompleteAdding();
+                                        p.QOut.Enqueue(null);
+                                        tick[1 - p.ProgNum].Release();
                                         throw new DeadlockException();
                                     }
-                                    DoReceive();
-                                    doneReceive = true;
+                                    tick[p.ProgNum].WaitOne();
                                 }
                                 finally
                                 {
-                                    if(monitorEntered) Monitor.Exit(deadlockCheck);
+                                    if (monitorEntered) Monitor.Exit(deadlockCheck);
                                 }
                             }
-                            if (!doneReceive) DoReceive(); //not waiting, so don't need a lock.
+                            if(!valReceived.HasValue) throw new DeadlockException();
+                            p.Registers[p.P1] = valReceived.Value;
                         }
                     },
                     {
@@ -91,17 +85,12 @@ namespace Day18
             {
                 try
                 {
-                    var registers = new ConcurrentDictionary<string, long> {["p"] = n};
+                    var registers = new ConcurrentDictionary<string, long> { ["p"] = n };
                     var qout = queues[n];
                     var qin = queues[1 - n];
                     for (long i = 0; i < lines.Count; i++)
                     {
-                        //if (stop.WaitOne(0))
-                        //{
-                        //    Console.Out.WriteLine($"{n} asked to stop");
-                        //    return;
-                        //}
-                        var parts = lines[(int) i].Split(' ');
+                        var parts = lines[(int)i].Split(' ');
                         Array.Resize(ref parts, 3);
                         var cmd = commands[parts[0]];
                         var cmdParams = new CommandParameters(n, parts[0], parts[1], parts[2], qin, qout, registers);
@@ -112,42 +101,38 @@ namespace Day18
                 catch (FinishedException e)
                 {
                     Console.WriteLine($"{n} threw {e.GetType().Name}");
-                    File.AppendAllLines($"{n}sent.txt", new[] {e.GetType().Name});
-                    File.AppendAllLines($"{n}received.txt", new[] {e.GetType().Name});
+                    File.AppendAllLines($"{n}sent.txt", new[] { e.GetType().Name });
+                    File.AppendAllLines($"{n}received.txt", new[] { e.GetType().Name });
                     stop.Set();
                 }
             })).ToArray();
             Task.WaitAll(tasks);
-            File.WriteAllLines("0sent.txt", sentRecord[0]);
-            File.WriteAllLines("1sent.txt", sentRecord[1]);
-            File.WriteAllLines("0received.txt", receivedRecord[0]);
-            File.WriteAllLines("1received.txt", receivedRecord[1]);
             Console.WriteLine(timesP1SentValue);
         }
 
-/*
- snd X plays a sound with a frequency equal to the value of X.
-set X Y sets register X to the value of Y.
-add X Y increases register X by the value of Y.
-mul X Y sets register X to the result of multiplying the value contained in register X by the value of Y.
-mod X Y sets register X to the remainder of dividing the value contained in register X by the value of Y (that is, it sets X to the result of X modulo Y).
-rcv X recovers the frequency of the last sound played, but only when the value of X is not zero. (If it is zero, the command does nothing.)
-jgz X Y jumps with an offset of the value of Y, but only if the value of X is greater than zero. (An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
- * */
+        /*
+         snd X plays a sound with a frequency equal to the value of X.
+        set X Y sets register X to the value of Y.
+        add X Y increases register X by the value of Y.
+        mul X Y sets register X to the result of multiplying the value contained in register X by the value of Y.
+        mod X Y sets register X to the remainder of dividing the value contained in register X by the value of Y (that is, it sets X to the result of X modulo Y).
+        rcv X recovers the frequency of the last sound played, but only when the value of X is not zero. (If it is zero, the command does nothing.)
+        jgz X Y jumps with an offset of the value of Y, but only if the value of X is greater than zero. (An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
+         * */
     }
 
     public class CommandParameters
     {
         public int ProgNum { get; }
-        public string Instruction { get;  }
+        public string Instruction { get; }
         public string P1 { get; }
         public string P2 { get; }
-        public BlockingCollection<long?> QIn { get; }
-        public BlockingCollection<long?> QOut { get; }
+        public ConcurrentQueue<long?> QIn { get; }
+        public ConcurrentQueue<long?> QOut { get; }
         public ConcurrentDictionary<string, long> Registers { get; set; }
         public long Jump { get; set; }
 
-        public CommandParameters(int progNum, string instruction, string p1, string p2, BlockingCollection<long?> qIn, BlockingCollection<long?> qOut, ConcurrentDictionary<string, long> registers)
+        public CommandParameters(int progNum, string instruction, string p1, string p2, ConcurrentQueue<long?> qIn, ConcurrentQueue<long?> qOut, ConcurrentDictionary<string, long> registers)
         {
             ProgNum = progNum;
             Instruction = instruction;
