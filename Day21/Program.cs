@@ -42,7 +42,7 @@ namespace Day21
             };
             
             var pic = PixelGroup.FromPattern(pattern);
-
+            var sw = Stopwatch.StartNew();
             var ruleCache = new ConcurrentDictionary<PixelGroup, (PixelGroup Source, PixelGroup Target)>();
             for (int it = 0; it < 18; it++)
             {
@@ -54,6 +54,8 @@ namespace Day21
                 Console.Out.WriteLine($"{it}, {pic.SideLength}");
             }
             Console.Out.WriteLine(pic.CountOn);
+            sw.Stop();
+            Console.Out.WriteLine(sw.Elapsed);
         }
     }
 
