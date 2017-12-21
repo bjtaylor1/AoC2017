@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,29 +12,57 @@ namespace Day21
     {
         static void Main(string[] args)
         {
-            var lines = new List<string>();
+            var rules = new List<(PixelGroup Source, PixelGroup Target)>();
+#if DEBUG
+            foreach(var line in File.ReadAllLines(@"..\..\input.txt"))
+#else
             string line;
             while (!string.IsNullOrEmpty(line = Console.ReadLine()))
+#endif
             {
-                lines.Add(line);
+                var parts = line.Split(new[] {"=>"}, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim().Split('/'))
+                    .Select(PixelGroup.FromPattern)
+                    .ToArray();
+                rules.Add((parts[0], parts[1]));
             }
-            var pixels = lines.SelectMany((l, y) => l.Select((c, x) => new Pixel(c, new Position(x, y)))).ToArray();
-            var initialGroup = new PixelGroup(pixels);
-            for (int i = 0; i < 4; i++)
+            
+            var pattern = new[]
             {
-                Console.WriteLine();
-                Console.WriteLine(initialGroup.Rotate(i));
+                ".#.",
+                "..#",
+                "###"
+            };
+            
+            var pic = PixelGroup.FromPattern(pattern);
+
+            for (int it = 0; it < 5; it++)
+            {
+                var sideLength = pic.SideLength;
+                var side = new[] {2, 3}.First(i => sideLength % i == 0);
+                var split = pic.Split(side);
+                var output = split.Select(p => (p.Position, rules.First(r => p.Segment.Match(r.Source)).Target)).ToArray();
+                pic = PixelGroup.Combine(output);
+                Console.Out.WriteLine(it);
             }
+            Console.Out.WriteLine(pic);
+            Console.Out.WriteLine(pic.Pixels.Count(p => p.Fill == '#'));
         }
     }
 
     public class PixelGroup
     {
-        public PixelGroup(Pixel[] pixels)
+        public static PixelGroup FromPattern(IEnumerable<string> pattern)
         {
-            Pixels = pixels;
+            return new PixelGroup(pattern.SelectMany((l, y) => l.Select((c, x) => new Pixel(c, new Position(x, y)))));
         }
 
+        public PixelGroup(IEnumerable<Pixel> pixels)
+        {
+            Pixels = pixels.OrderBy(p => p.Position.Y).ThenBy(p => p.Position.X).ToArray();
+        }
+
+        public int SideLength => (int) Math.Sqrt(Pixels.Length);
         public Pixel[] Pixels { get; }
 
         public PixelGroup Rotate(int times)
@@ -66,8 +96,59 @@ namespace Day21
 
         public override string ToString()
         {
-            return string.Join(Environment.NewLine,
-                Sort().Select(line => new string(line.Select(p => p.Fill).ToArray())));
+            var sort = Sort();
+            var join = string.Join(Environment.NewLine,
+                sort.Select(line => new string(line.Select(p => p.Fill).ToArray())));
+            return join;
+        }
+
+        public (Position Position, PixelGroup Segment)[] Split(int n)
+        {
+            var groups = Pixels.GroupBy(p => new Position(p.Position.X / n, p.Position.Y / n))
+                .Select(g => (g.Key, new PixelGroup(g.ToArray()).Normalize())).ToArray();
+            return groups;
+        }
+
+        public static PixelGroup Combine((Position Position, PixelGroup PixelGroup)[] segments)
+        {
+            var segmentSize = segments.Select(s => s.PixelGroup.Pixels.Length).Distinct().Single();
+            var segmentLength = (int)Math.Sqrt(segmentSize);
+            var newPixels = segments.SelectMany(seg =>
+                seg.PixelGroup.Normalize().Pixels.Select(p => new Pixel(p.Fill, p.Position + seg.Position * segmentLength))).ToArray();
+            var newGroup = new PixelGroup(newPixels).Normalize();
+            return newGroup;
+        }
+
+        public bool Match(PixelGroup rule)
+        {
+            if (Pixels.Length != rule.Pixels.Length) return false;
+            foreach (var flip in new[] {false, true})
+            {
+                foreach (var rotate in new[] {0, 1, 2, 3})
+                {
+                    var transformed = Flip(flip).Rotate(rotate).Normalize();
+                    Debug.WriteLine(rule + "\r\n");
+                    Debug.WriteLine(transformed + "\r\n\r\n");
+                    if (transformed.Equals(rule))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is PixelGroup group &&
+                   SideLength == group.SideLength &&
+                   Pixels.SequenceEqual(group.Pixels);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -1469460586;
+            hashCode = hashCode * -1521134295 + SideLength.GetHashCode();
+            hashCode = Pixels.Aggregate(hashCode, (h, p) => h * -1521134295 + p.GetHashCode());
+            return hashCode;
         }
     }
 
@@ -165,5 +246,20 @@ namespace Day21
         {
             return new Position(pos.X - other.X, pos.Y - other.Y);
         }
+
+        public static Position operator +(Position pos, Position other)
+        {
+            return new Position(pos.X + other.X, pos.Y + other.Y);
+        }
+
+        public static Position operator *(Position pos, Position other)
+        {
+            return new Position(pos.X * other.X, pos.Y * other.Y);
+        }
+
+        public static Position operator *(Position pos, int other)
+        {
+            return new Position(pos.X * other, pos.Y * other);
+        }        
     }
 }
