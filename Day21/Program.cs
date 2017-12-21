@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -26,6 +27,12 @@ namespace Day21
                     .ToArray();
                 rules.Add((parts[0], parts[1]));
             }
+
+            foreach (var rule in rules)
+            {
+                var length = rule.Source.SideLength;
+                Console.Out.WriteLine($"{length}\t{rule.Source.CountOn}\t{rule.Target.CountOn}");
+            }
             
             var pattern = new[]
             {
@@ -36,17 +43,17 @@ namespace Day21
             
             var pic = PixelGroup.FromPattern(pattern);
 
-            for (int it = 0; it < 5; it++)
+            var ruleCache = new ConcurrentDictionary<PixelGroup, (PixelGroup Source, PixelGroup Target)>();
+            for (int it = 0; it < 18; it++)
             {
                 var sideLength = pic.SideLength;
                 var side = new[] {2, 3}.First(i => sideLength % i == 0);
                 var split = pic.Split(side);
-                var output = split.Select(p => (p.Position, rules.First(r => p.Segment.Match(r.Source)).Target)).ToArray();
+                var output = split.Select(p => (p.Position, ruleCache.GetOrAdd(p.Segment, p1 => rules.First(r => p1.Match(r.Source))).Target)).ToArray();
                 pic = PixelGroup.Combine(output);
-                Console.Out.WriteLine(it);
+                Console.Out.WriteLine($"{it}, {pic.SideLength}");
             }
-            Console.Out.WriteLine(pic);
-            Console.Out.WriteLine(pic.Pixels.Count(p => p.Fill == '#'));
+            Console.Out.WriteLine(pic.CountOn);
         }
     }
 
@@ -64,6 +71,8 @@ namespace Day21
 
         public int SideLength => (int) Math.Sqrt(Pixels.Length);
         public Pixel[] Pixels { get; }
+
+        public int CountOn => Pixels.Count(p => p.Fill == '#');
 
         public PixelGroup Rotate(int times)
         {
@@ -127,8 +136,6 @@ namespace Day21
                 foreach (var rotate in new[] {0, 1, 2, 3})
                 {
                     var transformed = Flip(flip).Rotate(rotate).Normalize();
-                    Debug.WriteLine(rule + "\r\n");
-                    Debug.WriteLine(transformed + "\r\n\r\n");
                     if (transformed.Equals(rule))
                         return true;
                 }
