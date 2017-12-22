@@ -33,24 +33,36 @@ namespace Day22
 #if DEBUG
                 70;
 #else
-                10000;
+                10000000;
 #endif
+            var dirChanges = new Dictionary<char, int>
+            {
+                {'.', 3 }, // clean, turn left
+                {'W', 0 }, // weakened - don't turn
+                {'#', 1 }, // infected - turn right
+                {'F', 2 } // flagged - turn back
+            };
+            var stateChanges = new Dictionary<char, char>
+            {
+                {'.' , 'W'},
+                {'W', '#' },
+                {'#', 'F' },
+                {'F', '.' }
+            };
             int infections = 0;
             for(int it = 0; it < itMax; it++)
             {
                 char curNode = nodes.GetOrAdd(curPos, '.');
-                var dDir = curNode == '#' ? 1 : 3;
+                int dDir = dirChanges[curNode];
                 curDir = (curDir + dDir) % 4;
-                if (curNode == '#')
-                    nodes[curPos] = '.';
-                else
+                
+                nodes[curPos] = stateChanges[curNode];
+                if (nodes[curPos] == '#')
                 {
-                    nodes[curPos] = '#';
                     infections++;
                 }
-                nodes[curPos] = curNode == '#' ? '.' : '#';
-                curPos = (curPos.X + dirs[curDir].X, curPos.Y + dirs[curDir].Y);
 
+                curPos = (curPos.X + dirs[curDir].X, curPos.Y + dirs[curDir].Y);
 
 #if DEBUG
                 for(int y = nodes.Keys.Min(n => n.Y); y <= nodes.Keys.Max(n => n.Y); y++)
