@@ -61,21 +61,6 @@ namespace Day22
                 }
 
                 curPos = (curPos.X + dirs[curDir].X, curPos.Y + dirs[curDir].Y);
-
-#if DEBUG
-                for(int y = nodes.Keys.Min(n => n.Y); y <= nodes.Keys.Max(n => n.Y); y++)
-                {
-                    for (int x = nodes.Keys.Min(n => n.X); x <= nodes.Keys.Max(n => n.X); x++)
-                    {
-                        char c;
-                        if (!nodes.TryGetValue((x, y), out c)) c = ' ';
-                        string s = Equals(curPos, (x, y)) ? $"[{c}]" : $" {c} ";
-                        Console.Write(s);
-                    }
-                    Console.WriteLine();
-                }
-                Console.WriteLine();
-#endif
             }
 
             Console.WriteLine(infections);
