@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Day23
 {
@@ -14,24 +16,50 @@ namespace Day23
             {
                 lines.Add(line);
             }
-            int i = 0;
-            var registers = new ConcurrentDictionary<string, int>();
+            var registers = new Registers
+            {
+                ["a"] = 1
+            };
             int ParamVal(string param) => int.TryParse(param, out int intVal) ? intVal : registers.GetOrAdd(param, 0);
             int muls = 0;
-            var commands = new Dictionary<string, Action<string, string>>
+            int i = 0;
+            var commands = new Dictionary<string, Func<string, string, string>>
             {
-                {"set", (p1, p2) => registers[p1] = ParamVal(p2)},
-                {"sub", (p1, p2) => registers[p1] = ParamVal(p1) - ParamVal(p2) },
-                {"mul", (p1, p2) => { registers[p1] = ParamVal(p1) * ParamVal(p2); muls++; } },
-                {"jnz", (p1, p2) => { if(ParamVal(p1) != 0) i += (ParamVal(p2) - 1); } }
+                {"set", (p1, p2) => $"{p1} = {p2};" },
+                {"sub", (p1, p2) => $"{p1} -= {p2};" },
+                {"mul", (p1, p2) => $"{p1} *= {p2};" },
+                {"jnz", (p1, p2) => $"if({p1} != 0) goto line{(i + int.Parse(p2))};" }
             };
-
+            int count = 0;
+            int prevh = -1;
+            File.Delete("debug.txt");
             for(i = 0; i < lines.Count; i++)
             {
                 var parts = lines[i].Split(' ');
-                commands[parts[0]](parts[1], parts[2]);
+                Console.WriteLine($"line{i}: {commands[parts[0]](parts[1], parts[2])}");
             }
-            Console.WriteLine(muls);
+        }
+    }
+
+    public class Registers
+    {
+        private readonly ConcurrentDictionary<string, int> concurrentDictionary = new ConcurrentDictionary<string, int>();
+        
+        public int this[string s]
+        {
+            get { return concurrentDictionary[s]; }
+            set
+            {
+                var existingVal = GetOrAdd(s, 0);
+                concurrentDictionary[s] = value;
+            }
+        }
+
+        public string Values => string.Join(",", concurrentDictionary.OrderBy(v => v.Key).Select(v => v.Value));
+
+        public int GetOrAdd(string s, int val)
+        {
+            return concurrentDictionary.GetOrAdd(s, val);
         }
     }
 }
