@@ -18,6 +18,7 @@ namespace Day24
 
             var bridge = new Stack<int[]>();
             int maxStrength = 0;
+            var maxStrengthByLength = new Dictionary<int, int>();
             void AddToBridge()
             {
                 var connectionRequired = bridge.FirstOrDefault()?.Last() ?? 0;
@@ -26,10 +27,12 @@ namespace Day24
                     components.Remove(component);
                     bridge.Push(component.Value.OrderByDescending(p => p == connectionRequired).ToArray());
                     var totalStrength = bridge.Sum(b => b.Sum());
-                    maxStrength = Math.Max(totalStrength, maxStrength);
-                    var maxPossibleStrength = totalStrength + components.Sum(c => c.Value.Sum());
+                    var length = bridge.Count();
+                    if (!maxStrengthByLength.TryGetValue(length, out int maxLength)) maxLength = 0;
+                    maxStrengthByLength[length] = Math.Max(maxLength, totalStrength);
+                    //var maxPossibleStrength = totalStrength + components.Sum(c => c.Value.Sum());
                     Debug.WriteLine($"{string.Join("--", bridge.Reverse().Select(b => string.Join("/", b)))} = {totalStrength}");
-                    if (maxPossibleStrength > maxStrength)
+                    //if (maxPossibleStrength > maxStrength)
                     {
                         AddToBridge();
                     }
@@ -38,7 +41,7 @@ namespace Day24
                 }
             }
             AddToBridge();
-            Console.WriteLine(maxStrength);
+            Console.WriteLine(maxStrengthByLength[maxStrengthByLength.Keys.Max()]);
         }
         
     }
