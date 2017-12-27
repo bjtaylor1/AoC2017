@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace DM1
 {
@@ -12,39 +11,84 @@ namespace DM1
     {
         static void Main(string[] args)
         {
-            string line = Console.ReadLine() ;
-            var parts = line.Split(' ');
+            var numbers = Regex.Split(File.ReadAllText("input.txt").Trim(), @"\s+").Select(s => s.Trim()).Select(int.Parse).ToArray();
+            int numSleighs = (int)Math.Sqrt(numbers.Length);
+            if (numSleighs * numSleighs != numbers.Length) throw new InvalidOperationException();
+
             var sleighs = new ConcurrentDictionary<int, Sleigh>();
-            foreach(var part in parts)
+            int i = 0;
+            for(int sleighNum = 0; sleighNum < numSleighs; sleighNum++)
             {
-                var match = Regex.Match(part.Trim(), @"^(\w+)(\d+)$");
-                if (!match.Success) throw new InvalidOperationException();
-                string colour = match.Groups[1].Value;
-                var sleighNum = int.Parse(match.Groups[2].Value);
-                var sleigh = sleighs.GetOrAdd(sleighNum, new Sleigh());
-                sleigh.Add(colour);
+                Sleigh sleigh = sleighs.GetOrAdd(sleighNum, new Sleigh());
+                for (int colour = 0; colour < numSleighs; colour++)
+                {
+                    sleigh.Add(colour, numbers[i++]);
+                }
             }
-            
+
+            var permutations = new List<int[]>();
+            void AddPermutation(Stack<int> s, List<int[]> p)
+            {
+                if (s.Count == 10) p.Add(s.ToArray());
+                else
+                {
+                    for (int n = 0; n < 10; n++)
+                    {
+                        if (!s.Contains(n))
+                        {
+                            s.Push(n);
+                            AddPermutation(s, p);
+                            s.Pop();
+                        }
+                    }
+                }
+            }
+            AddPermutation(new Stack<int>(), permutations);
+            int MovesForPermutation(int[] permutation)
+            {
+                return permutation.Select((sleigh, colour) => sleighs.Where(k => k.Key != sleigh).Sum(k => k.Value.Presents[colour])).Sum();
+            }
+            int bestNumMoves = int.MaxValue;
+            int[] bestPermutation = null;
+            int numBestPermutations = 0;
+            foreach(var p in permutations)
+            {
+                var numMoves = MovesForPermutation(p);
+                if (numMoves < bestNumMoves)
+                {
+                    bestNumMoves = numMoves;
+                    bestPermutation = p;
+                    numBestPermutations = 1;
+                }
+                else if (numMoves == bestNumMoves)
+                {
+                    numBestPermutations++;
+                }
+            }
+
+            Console.Out.WriteLine(bestNumMoves);
         }
     }
 
+
+
     class Sleigh
     {
-        public void Add(string c)
+        public void Add(int c, int num)
         {
-            if (!Presents.TryGetValue(c, out int current)) current = 0;
-            Presents[c] = ++current;
+            if (Presents.ContainsKey(c)) throw new InvalidOperationException();
+            Presents.Add(c, num);
         }
 
         public bool IsContigious => Presents.Keys.Distinct().Count() <= 1;
         public int MinPresentsOfOneColour => Presents.Values.Min();
         public int DifferentColours => Presents.Count();
 
-        public bool TryRemove(out string c)
+        public bool TryRemove(out int c)
         {
             if(!Presents.Any())
             {
-                c = default(string);
+                c = -1;
                 return false;
             }
             c = Presents.Keys.First();
@@ -52,6 +96,6 @@ namespace DM1
             return true;
         }
 
-        public Dictionary<string, int> Presents { get; } = new Dictionary<string, int>();
+        public Dictionary<int, int> Presents { get; } = new Dictionary<int, int>();
     }
 }
