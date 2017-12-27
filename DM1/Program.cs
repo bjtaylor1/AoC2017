@@ -44,33 +44,13 @@ namespace DM1
                 }
             }
             AddPermutation(new Stack<int>(), permutations);
-            int MovesForPermutation(int[] permutation)
-            {
-                return permutation.Select((sleigh, colour) => sleighs.Where(k => k.Key != sleigh).Sum(k => k.Value.Presents[colour])).Sum();
-            }
-            int bestNumMoves = int.MaxValue;
-            int[] bestPermutation = null;
-            int numBestPermutations = 0;
-            foreach(var p in permutations)
-            {
-                var numMoves = MovesForPermutation(p);
-                if (numMoves < bestNumMoves)
-                {
-                    bestNumMoves = numMoves;
-                    bestPermutation = p;
-                    numBestPermutations = 1;
-                }
-                else if (numMoves == bestNumMoves)
-                {
-                    numBestPermutations++;
-                }
-            }
 
-            Console.Out.WriteLine(bestNumMoves);
+            var totalOfEachColour = Enumerable.Range(0, numSleighs).Select(s => sleighs.Sum(k => k.Value.Presents[s])).ToArray();
+            var targetOfEachColour = totalOfEachColour.Select(n => n / numSleighs).ToArray();
+            var numMoves = sleighs.Select(sleigh => sleigh.Value.Presents.Select(p => Math.Abs(targetOfEachColour[p.Key] - p.Value)).Sum()).Sum();
+            Console.Out.WriteLine(numMoves);
         }
     }
-
-
 
     class Sleigh
     {
