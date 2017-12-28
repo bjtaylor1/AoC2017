@@ -49,6 +49,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Day22", "Day22\Day22.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DM1", "DM1\DM1.csproj", "{745632AD-CFD1-4F10-A9C8-2A92F97DB356}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DM1C", "DM1C\DM1C.vcxproj", "{37137D59-3429-4BBF-90C1-B2231F62B228}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -335,6 +337,16 @@ Global
 		{745632AD-CFD1-4F10-A9C8-2A92F97DB356}.Release|x64.Build.0 = Release|Any CPU
 		{745632AD-CFD1-4F10-A9C8-2A92F97DB356}.Release|x86.ActiveCfg = Release|Any CPU
 		{745632AD-CFD1-4F10-A9C8-2A92F97DB356}.Release|x86.Build.0 = Release|Any CPU
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Debug|x64.ActiveCfg = Debug|x64
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Debug|x64.Build.0 = Debug|x64
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Debug|x86.ActiveCfg = Debug|Win32
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Debug|x86.Build.0 = Debug|Win32
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Release|Any CPU.ActiveCfg = Release|Win32
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Release|x64.ActiveCfg = Release|x64
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Release|x64.Build.0 = Release|x64
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Release|x86.ActiveCfg = Release|Win32
+		{37137D59-3429-4BBF-90C1-B2231F62B228}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -17,7 +17,7 @@ namespace DM1
 
             var sleighs = new ConcurrentDictionary<int, Sleigh>();
             int i = 0;
-            for(int sleighNum = 0; sleighNum < numSleighs; sleighNum++)
+            for (int sleighNum = 0; sleighNum < numSleighs; sleighNum++)
             {
                 Sleigh sleigh = sleighs.GetOrAdd(sleighNum, new Sleigh());
                 for (int colour = 0; colour < numSleighs; colour++)
@@ -28,7 +28,12 @@ namespace DM1
 
             var totalOfEachColour = Enumerable.Range(0, numSleighs).Select(s => sleighs.Sum(k => k.Value.Presents[s])).ToArray();
             var targetOfEachColour = totalOfEachColour.Select(n => n / numSleighs).ToArray();
-            var numMoves = sleighs.Select(sleigh => sleigh.Value.Presents.Select(p => Math.Abs(targetOfEachColour[p.Key] - p.Value)).Sum()).Sum();
+            var numMoves = sleighs.Select(sleigh =>
+            {
+                int[] movements = sleigh.Value.Presents.Select(p => targetOfEachColour[p.Key] - p.Value).ToArray();
+                int v = movements.Where(m => m > 0).Sum();
+                return v;
+            }).Sum();
             Console.Out.WriteLine(numMoves);
         }
     }
@@ -47,7 +52,7 @@ namespace DM1
 
         public bool TryRemove(out int c)
         {
-            if(!Presents.Any())
+            if (!Presents.Any())
             {
                 c = -1;
                 return false;
