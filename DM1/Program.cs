@@ -26,25 +26,6 @@ namespace DM1
                 }
             }
 
-            var permutations = new List<int[]>();
-            void AddPermutation(Stack<int> s, List<int[]> p)
-            {
-                if (s.Count == 10) p.Add(s.ToArray());
-                else
-                {
-                    for (int n = 0; n < 10; n++)
-                    {
-                        if (!s.Contains(n))
-                        {
-                            s.Push(n);
-                            AddPermutation(s, p);
-                            s.Pop();
-                        }
-                    }
-                }
-            }
-            AddPermutation(new Stack<int>(), permutations);
-
             var totalOfEachColour = Enumerable.Range(0, numSleighs).Select(s => sleighs.Sum(k => k.Value.Presents[s])).ToArray();
             var targetOfEachColour = totalOfEachColour.Select(n => n / numSleighs).ToArray();
             var numMoves = sleighs.Select(sleigh => sleigh.Value.Presents.Select(p => Math.Abs(targetOfEachColour[p.Key] - p.Value)).Sum()).Sum();
