@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -14,6 +15,8 @@ namespace DM1
             var numbers = Regex.Split(File.ReadAllText("input.txt").Trim(), @"\s+").Select(s => s.Trim()).Select(int.Parse).ToArray();
             int numSleighs = (int)Math.Sqrt(numbers.Length);
             if (numSleighs * numSleighs != numbers.Length) throw new InvalidOperationException();
+
+            var stopwatch = Stopwatch.StartNew();
 
             var sleighs = new ConcurrentDictionary<int, Sleigh>();
             int i = 0;
@@ -44,9 +47,20 @@ namespace DM1
                 }
             }
             AddPermutation(new Stack<int>(), permutations);
+
+            Console.WriteLine($"Calculated {permutations.Count} permutations in {stopwatch.Elapsed}");
+
+            permutations.Reverse();
             int MovesForPermutation(int[] permutation)
             {
-                return permutation.Select((sleigh, colour) => sleighs.Where(k => k.Key != sleigh).Sum(k => k.Value.Presents[colour])).Sum();
+                var  moves = permutation.Select((sleigh, colour) =>
+                {
+                    var movesThis = sleighs.Where(k => k.Key != sleigh).Select(k => k.Value.Presents[colour]).ToArray();
+                    int v = movesThis.Sum();
+                    return v;
+                }
+                ).ToArray();
+                return moves.Sum();
             }
             int bestNumMoves = int.MaxValue;
             int[] bestPermutation = null;
@@ -66,7 +80,7 @@ namespace DM1
                 }
             }
 
-            Console.Out.WriteLine(bestNumMoves);
+            Console.Out.WriteLine($"{bestNumMoves} {stopwatch.Elapsed}");
         }
     }
 
