@@ -50,36 +50,10 @@ namespace DM1
 
             Console.WriteLine($"Calculated {permutations.Count} permutations in {stopwatch.Elapsed}");
 
-            permutations.Reverse();
             int MovesForPermutation(int[] permutation)
-            {
-                var  moves = permutation.Select((sleigh, colour) =>
-                {
-                    var movesThis = sleighs.Where(k => k.Key != sleigh).Select(k => k.Value.Presents[colour]).ToArray();
-                    int v = movesThis.Sum();
-                    return v;
-                }
-                ).ToArray();
-                return moves.Sum();
-            }
-            int bestNumMoves = int.MaxValue;
-            int[] bestPermutation = null;
-            int numBestPermutations = 0;
-            foreach(var p in permutations)
-            {
-                var numMoves = MovesForPermutation(p);
-                if (numMoves < bestNumMoves)
-                {
-                    bestNumMoves = numMoves;
-                    bestPermutation = p;
-                    numBestPermutations = 1;
-                }
-                else if (numMoves == bestNumMoves)
-                {
-                    numBestPermutations++;
-                }
-            }
-
+                => permutation.Select((sleigh, colour) => sleighs.Where(k => k.Key != sleigh).Select(k => k.Value.Presents[colour]).ToArray().Sum()).ToArray().Sum();
+            var bestNumMoves = permutations.Min(p => MovesForPermutation(p));
+            
             Console.Out.WriteLine($"{bestNumMoves} {stopwatch.Elapsed}");
         }
     }
